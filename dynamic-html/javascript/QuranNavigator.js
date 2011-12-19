@@ -250,20 +250,22 @@ var self = {
 		
 		parse: {
 			
-			load: function (quranBy, text)
+			load: function (quranBy, text, value)
 			{	
 				type = self.data.quranList[quranBy].type;
 				
 				if (type == 'quran' && /tajweed/.test(quranBy))
-					return this.parseTajweed(quranBy, text);
+					return this.parseTajweed(quranBy, text, value);
 				else if (type == 'quran' && /wordbyword/.test(quranBy))
-					return this.parseWordByWord(quranBy, text);
+					return this.parseWordByWord(quranBy, text, value);
 				else if (type == 'quran' && /kids/.test(quranBy))
-					return this.parseKidsWordByWord(quranBy, text);
+					return this.parseKidsWordByWord(quranBy, text, value);
+				else if (type == 'quran' && /grammar/.test(quranBy))
+					return this.parseGrammarWordByWord(quranBy, text, value);
 				else if (type == 'quran')
-					return this.parseQuran(quranBy, text);
+					return this.parseQuran(quranBy, text, value);
 				else
-					return this.parseTranslation(quranBy, text);
+					return this.parseTranslation(quranBy, text, value);
 			},
 			
 			parseQuran: function (quranBy, text)
@@ -331,7 +333,52 @@ var self = {
 				return verse_html;
 			},
 			
-			parseKidsWordByWord: function (quranBy, text)
+			parseKidsWordByWord: function (quranBy, text, value)
+			{
+				var words = text.split('$');
+				var verse_html = '';
+				var color = this._color;
+				$.each(words, function(i, verse) {
+					if (verse)
+					{
+						var verse = verse.split('|');
+					    var ref = (value?value.surah:'?') +':'+ (value?value.ayah:'?') + ':'+ (1+i);
+						var refHtml='', refPOS='', corpus = CORPUS.UIgetWordGrammarDisplay(ref);
+						if(corpus && typeof(corpus) == 'object'){
+							refHtml = corpus.html; 
+							refPOS = corpus.pos;
+						}
+						
+						if (self.settings.wbwDirection == 'english2arabic')
+						{
+							if (self.settings.wbwMouseOver)
+								verse_html += '<span class="word wordColor'+color+'"><span class="en tipsWord" title="'+verse[0]+'">'+verse[1]+'</span></span>';
+							else
+								verse_html += '<span class="word wordColor'+color+' staticWord"><span class="en first ltr" dir="ltr">'+verse[1]+'</span><span class="ar quranText second rtl" dir="rtl">'+verse[0]+'</span></span>';
+						}
+						else
+						{
+							if (self.settings.wbwMouseOver)
+								verse_html += '<span class="word wordColor'+color+'"><span class="ar quranText tipsWord" title="'+verse[1]+'">'+verse[0]+'</span></span>';
+							else
+								verse_html += '<span class="word wordColorXXX'+color+ ' POS-'+ refPOS + ' staticWord"><span class="ar quranText top first rtl tipsWord" dir="rtl" title="' + refHtml + /*'<br/>' + verse[1]+verse[0]+*/'">'+verse[0]+'</span><span class="en second ltr" dir="ltr">'+verse[1]+'</span></span>'; //+
+								//'<span class="currentAyah tips" title="Surah Al Nas" data-tips-position="bottom center" data-tips-dynamic="true">00:00</span>'; 
+						}
+					}
+					
+					if (color == 10)
+						color = 1;
+					++color;
+				});
+				
+				this._color = color;
+				
+				return verse_html;
+			},
+			_color: 1,
+			
+			
+			parseGrammarWordByWord: function (quranBy, text)
 			{
 				var words = text.split('$');
 				var verse_html = '';
@@ -367,6 +414,8 @@ var self = {
 				return verse_html;
 			},
 			_color: 1,
+			
+			
 			
 			parseTajweed: function (quranBy, text)
 			{
